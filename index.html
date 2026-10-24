@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#16324f">
+<title>Parking Fee Calculator</title>
+<style>
+:root{color-scheme:light;--navy:#16324f;--blue:#3563e9;--bg:#f3f6fb;--muted:#5d6b7a}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:#17212b}
+main{max-width:460px;margin:0 auto}
+.card{background:#fff;border-radius:20px;padding:20px;box-shadow:0 8px 28px rgba(20,40,70,.08)}
+h1{margin:0 0 8px;font-size:27px;line-height:1.2;color:var(--navy)}
+.subtitle{margin:0 0 20px;color:var(--muted);font-size:15px;line-height:1.5}
+.time-section{border:1px solid #d7e0ed;background:#fbfcff;border-radius:15px;padding:15px;margin-top:15px}
+.section-heading{margin:0 0 5px;color:var(--navy);font-size:17px;font-weight:750}
+.section-note{margin:0 0 13px;color:var(--muted);font-size:13px;line-height:1.45}
+label{display:block;font-size:14px;font-weight:650;margin:0 0 6px}
+input{display:block;width:100%;min-width:0;min-height:48px;border:1px solid #cbd5e1;border-radius:10px;padding:10px;font:inherit;background:#fff;color:#17212b}
+button{width:100%;border:0;border-radius:11px;padding:15px 16px;margin-top:19px;font:inherit;font-weight:750;background:var(--blue);color:white;cursor:pointer}
+.result{margin-top:19px;padding:18px;border-radius:14px;background:#edf5ff;border:1px solid #d4e6ff}
+.result-label{font-size:14px;color:#40566d}
+.amount{font-size:40px;font-weight:800;color:var(--navy);margin:5px 0 8px}
+.detail{font-size:14px;line-height:1.6;color:#34465a}
+.error{color:#b42318;font-weight:650}
+.rules{margin-top:20px;color:var(--muted);font-size:13px;line-height:1.65}
+.rules strong{color:#34465a}
+.small{margin-top:13px;color:var(--muted);font-size:12px;line-height:1.5;text-align:center}
+</style>
+</head>
+<body>
+<main><section class="card">
+<h1>Parking Fee Calculator</h1>
+<p class="subtitle">Enter the vehicle's entry date and time. The exit date and time are taken automatically from the current time.</p>
+
+<section class="time-section">
+<h2 class="section-heading">Entry Details</h2>
+<p class="section-note">Enter when the vehicle arrived.</p>
+<label for="entryDate">Entry date</label>
+<input id="entryDate" type="date" required>
+<label for="entryTime" style="margin-top:12px">Entry time</label>
+<input id="entryTime" type="time" required>
+</section>
+
+<button id="calculate" type="button">Calculate Parking Fee</button>
+<div class="result" aria-live="polite">
+<div class="result-label">Parking fee</div>
+<div class="amount" id="amount">₹—</div>
+<div class="detail" id="details">Enter the entry date and time, then calculate.</div>
+</div>
+<div class="rules"><strong>Fee rules</strong><br>
+• Each complete 24 hours: ₹40<br>
+• Remaining time up to 13 hours: ₹20<br>
+• Remaining time over 13 hours and up to 15 hours: ₹30<br>
+• Remaining time over 15 hours and under 24 hours: ₹40
+</div>
+<div class="small">The current exit date and time are refreshed whenever you tap Calculate Parking Fee.</div>
+</section></main>
+<script>
+(function(){
+const entryDateInput=document.getElementById('entryDate');
+const entryTimeInput=document.getElementById('entryTime');
+const amountOutput=document.getElementById('amount');
+const detailsOutput=document.getElementById('details');
+function durationText(totalMinutes){
+ const days=Math.floor(totalMinutes/1440), rem=totalMinutes%1440, hours=Math.floor(rem/60), mins=rem%60, parts=[];
+ if(days)parts.push(days+(days===1?' day':' days'));
+ if(hours)parts.push(hours+(hours===1?' hour':' hours'));
+ if(mins||parts.length===0)parts.push(mins+(mins===1?' minute':' minutes'));
+ return parts.join(' ');
+}
+function calculate(){
+ if(!entryDateInput.value||!entryTimeInput.value){
+  amountOutput.textContent='₹—';
+  detailsOutput.innerHTML='<span class="error">Please enter both the entry date and entry time.</span>';
+  return;
+ }
+ const now=new Date();
+ const entry=new Date(entryDateInput.value+'T'+entryTimeInput.value);
+ const diffMs=now.getTime()-entry.getTime();
+ if(!Number.isFinite(diffMs)||diffMs<0){
+  amountOutput.textContent='₹—';
+  detailsOutput.innerHTML='<span class="error">Entry date and time cannot be later than the current time.</span>';
+  return;
+ }
+ const totalMinutes=Math.floor(diffMs/60000);
+ const fullDays=Math.floor(totalMinutes/1440);
+ const remaining=totalMinutes%1440;
+ let remainderFee;
+ if(totalMinutes===0)remainderFee=20;
+ else if(remaining===0)remainderFee=0;
+ else if(remaining<=780)remainderFee=20;
+ else if(remaining<=900)remainderFee=30;
+ else remainderFee=40;
+ const fee=fullDays*40+remainderFee;
+ amountOutput.textContent='₹'+fee.toLocaleString('en-IN');
+ detailsOutput.textContent='Exit time used: '+now.toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})+'. Total duration: '+durationText(totalMinutes)+'. Full 24-hour blocks: '+fullDays+' × ₹40 = ₹'+(fullDays*40)+'. Remaining-time fee: ₹'+remainderFee+'.';
+}
+document.getElementById('calculate').addEventListener('click',calculate);
+})();
+</script>
+</body></html>
